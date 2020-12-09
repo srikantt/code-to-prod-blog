@@ -1,4 +1,4 @@
-apiVersion: tekton.dev/v1alpha1
+apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerTemplate
 metadata:
   name: reverseword-build-triggertemplate
@@ -21,7 +21,7 @@ spec:
           value: $(params.gitrevision)
         - name: url
           value: $(params.gitrepositoryurl)
-    - apiVersion: tekton.dev/v1alpha1
+    - apiVersion: tekton.dev/v1beta1
       kind: PipelineRun
       metadata:
         name: reversewords-build-pipeline-run-$(uid)
@@ -42,7 +42,7 @@ spec:
             resourceRef:
               name: reverse-words-image
 ---
-apiVersion: tekton.dev/v1alpha1
+apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
   name: github-triggerbinding
@@ -52,16 +52,48 @@ spec:
       value: $(body.head_commit.id)
     - name: gitrepositoryurl
       value: $(body.repository.url)
+
 ---
-apiVersion: tekton.dev/v1alpha1
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: reverse-words-role
+rules:
+# Permissions for every EventListener deployment to function
+ - apiGroups: ["triggers.tekton.dev"]
+   resources: ["eventlisteners", "triggerbindings", "triggertemplates"]
+   verbs: ["get"]
+ - apiGroups: [""]
+   resources: ["configmaps"]
+   verbs: ["get", "list", "watch"]
+# Permissions to create resources in associated TriggerTemplates
+ - apiGroups: ["tekton.dev"]
+   resources: ["pipelineruns"]
+   verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: reverse-words-rolebinding
+subjects:
+- kind: ServiceAccount
+  name: reversewords-pipeline
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: reverse-words-role
+
+---
+apiVersion: triggers.tekton.dev/v1alpha1
 kind: EventListener
 metadata:
   name: webhook
 spec:
   serviceAccountName: pipeline
   triggers:
-    - binding:
-        name: github-triggerbinding
+    - name: pullrequest-reversewords
+      bindings:
+      - ref: github-triggerbinding
       template:
         name: reverseword-build-triggertemplate
 ---
@@ -76,8 +108,6 @@ metadata:
 spec:
   port:
     targetPort: 8080
-  tls:
-    termination: edge
   to:
     kind: Service
     name: el-webhook
