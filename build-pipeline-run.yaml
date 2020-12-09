@@ -3,11 +3,9 @@ kind: PipelineRun
 metadata:
   generateName: reverse-words-build-pipeline-run-
 spec:
+  serviceAccountName: reversewords-pipeline
   pipelineRef:
     name: reverse-words-build-pipeline
-  serviceAccountNames:
-    - taskName: build-and-push
-      serviceAccountName: reversewords-pipeline
   params:
     - name: imageTag
       value: "testing"

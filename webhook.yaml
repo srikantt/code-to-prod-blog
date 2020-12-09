@@ -18,9 +18,9 @@ spec:
         type: git
         params:
         - name: revision
-          value: $(params.gitrevision)
+          value: $(body.head_commit.id)
         - name: url
-          value: $(params.gitrepositoryurl)
+          value: $(body.repository.clone_url)
     - apiVersion: tekton.dev/v1beta1
       kind: PipelineRun
       metadata:
