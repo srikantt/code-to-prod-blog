@@ -9,7 +9,7 @@ spec:
     spec:
       containers:
       - name: reverse-words
-        image: quay.io/srikantt/tekton-reversewords:latest
+        image: quay.io/srikantt/tekton-reversewords:testing
         env:
         - name: RELEASE
           value: "Production release"
