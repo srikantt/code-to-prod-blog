@@ -12,5 +12,5 @@ spec:
         image: quay.io/srikantt/tekton-reversewords:testing
         env:
         - name: RELEASE
-          value: "Stage Release"
+          value: "Production release"
         - $patch: replace
